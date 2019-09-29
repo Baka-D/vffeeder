@@ -59,8 +59,7 @@ check_python(){
 install_python3(){
     read -n 1 -p 'Python 3 installetion not found, need to install Python 3 now. Do you want to continue? [Y/n]' confirmInput
     if [[ $confirmInput == 'y' ]] || [[ $confirmInput == 'Y' ]] || [[ $confirmInput == '' ]]; then
-            $packageManager -y install python3 curl
-        fi
+        $packageManager -y install python3 curl
         if [ $? -eq 0 ]; then
             checkPython=1
             check_python
