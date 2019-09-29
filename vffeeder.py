@@ -210,4 +210,4 @@ elif sys.argv[1] == 'update':
 elif sys.argv[1] == 'help':
     help()
 else:
-    print('Unknown argument. use \'vffeeder help\' to get command list.')
+    print('Invalid argument.\n    use \'vffeeder help\' to get command list.')
