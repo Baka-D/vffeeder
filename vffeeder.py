@@ -135,6 +135,7 @@ class Register:
                 with open('/etc/cron.d/vffeeder', 'w') as cronjob:
                     cronjob.write(updateCommand)
                     cronjob.close()
+                os.system('chmod 600 /etc/cron.d/vffeeder')
             except:
                 print('Failed to add cronjob, please add the following line to your cronjob file manually.')
                 print(updateCommand)
