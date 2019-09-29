@@ -60,7 +60,7 @@ class Register:
                 self.nodeUUID = input('Please enter your UUID if this is an existing feeder, leave it blank if this is a new feeder.\nFeeder UUID:')
                 self.attr = 'uuid'
                 if self.validate() == True:
-                    print('Your UUID is ', self.nodeUUID+', please register it on http://flightadsb.variflight.com/share-data/script if you haven\'t yet.')
+                    print('Your UUID is', self.nodeUUID+', please register it on http://flightadsb.variflight.com/share-data/script if you haven\'t yet.')
                     break
                 else:
                     print('Invalid UUID, please check again and re-enter.')
@@ -149,9 +149,9 @@ class Update:
         exit()
 
     def parse_version(self, data):
-        versionNumber = data.split('.')
+        versionFull = data.split('.')
         version = ()
-        for int(versionNumber) in versionNumber:
+        for versionNumber in versionFull:
             version = version + (versionNumber,)
         return version
 
