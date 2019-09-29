@@ -1,0 +1,16 @@
+[Unit]
+Description=Variflight Feeder
+After=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+LimitCORE=infinity
+ExecStart=/usr/local/bin/vffeeder
+User=vffeeder
+Group=vffeeder
+PermissionsStartOnly=true
+StandardOutput=null
+
+[Install]
+WantedBy=multi-user.target
