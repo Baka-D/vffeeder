@@ -80,18 +80,18 @@ compile_python3(){
 }
 
 install_feeder(){
-    if ! curl -o /usr/local/bin/vffeeder https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.py; then
+    if ! curl -s -o /usr/local/bin/vffeeder https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.py; then
         echo 'Failed to download feeder script'
         exit 1
     fi
     if ! [[ -f /bin/systemctl ]]; then
         if [[ $packageManager == 'apt' ]]; then
-            apt install systemd -y
+            apt update && apt install systemd -y
         else
             yum -y install systemd
         fi
     fi
-    if ! curl -o /etc/systemd/system/vffeeder.service https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.service; then
+    if ! curl -s -o /etc/systemd/system/vffeeder.service https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.service; then
         echo 'Failed to download feeder service script'
         exit 1
     fi
