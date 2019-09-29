@@ -16,10 +16,10 @@ disable_selinux(){
 }
 
 detect_system(){
-    if source /etc/os-release; then
-        if [[ $ID_LIKE == 'debian' ]]; then
+    if [[ -f /etc/os-release ]]; then
+        if grep -Eiq 'debian' /etc/os-release; then
             packageManager='apt'
-        elif [[ $ID_LIKE == 'rhel fedora' ]]; then
+        elif grep -Eiq 'rhel' /etc/os-release; then
             packageManager='yum'
         else
             echo 'Unsupported system.'
