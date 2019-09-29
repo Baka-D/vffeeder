@@ -96,7 +96,10 @@ install_feeder(){
         exit 1
     fi
     chmod +x /usr/local/bin/vffeeder
-    useradd vffeeder -s /sbin/nologin -d /var/lib/vffeeder -m
+    if ! id -u vffeeder 2>&1; then
+        useradd vffeeder -s /sbin/nologin -d /var/lib/vffeeder -m
+    fi
+    exit 0
 }
 
 main(){
