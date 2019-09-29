@@ -64,12 +64,8 @@ install_python3(){
         else
             yum -y install python3 curl
         fi
-        if [ $? -eq 0 ]; then
-            checkPython=1
-            check_python
-        else
-            compile_python3
-        fi
+        checkPython=1
+        check_python
     else
         echo 'Process aborted.'
         exit 1
