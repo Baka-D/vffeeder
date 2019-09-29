@@ -4,7 +4,7 @@
 #You need to have an existing dump1090 installation to paticipent in this project.
 #You could learn more at https://flightadsb.variflight.com/
 #
-#System requirements: Centos 7+, Debian 7+, Ubuntu 14+
+#System requirements: Centos 7+, Debian 8+, Ubuntu 14+
 
 [[ $EUID -ne 0 ]] && echo 'Please run this script as root!' && exit 1
 
