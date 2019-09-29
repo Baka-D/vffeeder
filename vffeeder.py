@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 import sys
 
-try:
-    assert sys.version_info >= (3, 3)
-except AssertionError:
+if sys.version_info < (3, 3):
     print('Your Python version doesn\'t meet the requirement, please upgrade your Python to 3.3 or above.')
     exit()
 
@@ -18,25 +16,25 @@ import zlib
 import os
 
 configLocation = '/etc/vffeeder.ini'
+if os.path.isfile(configLocation) == False:
+    getIni = urllib.request.urlopen(url = 'https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.ini')
+    with open(configLocation, 'w') as config_file:
+        config_file.write(getIni.read().decode())
+        config_file.close()
 
 config = configparser.ConfigParser()
 
 class Register:
     def check(self):
         try:
-            open(configLocation, 'r').close()
-        except FileNotFoundError:
+            config.read(configLocation)
+            nodeUUID = config.get('DEFAULT','uuid')
+        except:
             self.signup()
-        confirmInput = input('It seems that you already have a configration file for Variflight feeder, would you like to override that file? (Y/n)')[:1]
+        confirmInput = input('It seems that you already have a configration file for VariFlight feeder, would you like to override that file? (Y/n)')[:1]
         if confirmInput == 'y' or confirmInput == '' or confirmInput == 'Y':
             self.signup()
         else:
-            config.read(configLocation)
-            try:
-                nodeUUID = config.get('DEFAULT','uuid')
-            except:
-                print('Invalid file format, please check your configuration file again.')
-                exit()
             os.system('/bin/systemctl enable vffeeder')
             print('Your UUID for current configuration is', nodeUUID+'. You could run \'systemctl start vffeeder\' to start feed data now!')
 
@@ -73,28 +71,25 @@ class Register:
             else:
                 print('Please enter your information again.\n')
         self.write_config()
-        print('Variflight feeder has been installed successfully, please run \'systemctl start vffeeder\' to start feeding!')
+        print('VariFlight feeder has been installed successfully, please run \'systemctl start vffeeder\' to start feeding!')
         exit()
 
     def validate(self):
         if self.attr == 'address':
             if self.address == 'localhost':
+                self.address = '127.0.0.1'
                 return True
             else:
-                a = self.address.split('.')
-                if len(a) != 4:
+                try:
+                    for i in self.address.split('.'):
+                        if i.isdigit() and int(i) in range(0,255):
+                            return True
+                        else:
+                            raise ValueError()
+                except:
                     return False
-                for x in a:
-                    if not x.isdigit():
-                        return False
-                    i = int(x)
-                    if i < 0 or i > 255:
-                        return False
-                return True
         elif self.attr == 'port':
-            if not self.port.isdigit():
-                return False
-            elif int(self.port) in range(1,65534):
+            if self.port.isdigit() and int(self.port) in range(1,65534):
                 return True
             else:
                 return False
@@ -118,10 +113,9 @@ class Register:
             return True
 
     def write_config(self):
-        config.add_section('HOST_INFO')
-        config.set('DEFAULT','reportURL','http://adsb.feeyo.com/adsb/ReceiveCompressADSB.php')
+        config.read(configLocation)
         config.set('DEFAULT','uuid',self.nodeUUID)
-        config.set('DEFAULT','version','0.1.2')
+        config.set('DEFAULT','reportURL','http://adsb.feeyo.com/adsb/ReceiveCompressADSB.php')
         config.set('HOST_INFO','address',self.address)
         config.set('HOST_INFO','port',self.port)
         with open(configLocation, 'w') as configfile:
@@ -135,7 +129,7 @@ class Register:
                 with open('/etc/cron.d/vffeeder', 'w') as cronjob:
                     cronjob.write(updateCommand)
                     cronjob.close()
-                os.system('chmod 600 /etc/cron.d/vffeeder')
+                os.chmod('/etc/cron.d/vffeeder', 600)
             except:
                 print('Failed to add cronjob, please add the following line to your cronjob file manually.')
                 print(updateCommand)
@@ -144,21 +138,14 @@ class Register:
 class Update:
     def check(self):
         config.read(configLocation)
-        currentVersion = self.parse_version(config.get('DEFAULT','version'))
+        currentVersion = parse_version(config.get('DEFAULT','version'))
         getVersion = urllib.request.urlopen(url = 'https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.ini')
         config.read_string(getVersion.read().decode())
         self.latestVersion = config.get('DEFAULT','version')
-        if currentVersion < self.parse_version(self.latestVersion):
+        if currentVersion < parse_version(self.latestVersion):
             self.upgrade()
         print('This is the latest version, no need to update.')
         exit()
-
-    def parse_version(self, data):
-        versionFull = data.split('.')
-        version = ()
-        for versionNumber in versionFull:
-            version = version + (versionNumber,)
-        return version
 
     def upgrade(self):
         scriptLocation = os.path.abspath(__file__)
@@ -176,7 +163,14 @@ class Update:
         print('Update completed successfully!')
         exit()
 
-def help():
+def parse_version(data):
+    versionFull = data.split('.')
+    version = ()
+    for versionNumber in versionFull:
+        version = version + (versionNumber,)
+    return version
+
+def get_help():
     print('Usage:')
     print('    vffeeder - Start feeding to VariFlight\'s server')
     print('    vffeeder update - Check and update to the latest version of vffeeder')
@@ -213,6 +207,6 @@ elif sys.argv[1] == 'signup':
 elif sys.argv[1] == 'update':
     Update().check()
 elif sys.argv[1] == 'help':
-    help()
+    get_help()
 else:
     print('Invalid argument.\n    use \'vffeeder help\' to get command list.')

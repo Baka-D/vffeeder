@@ -88,6 +88,10 @@ install_feeder(){
         echo 'Failed to download feeder service script'
         exit 1
     fi
+    if ! curl -s -o /etc/vffeeder.ini https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.ini; then
+        echo 'Failed to download feeder configuration template'
+        exit 1
+    fi
     chmod +x /usr/local/bin/vffeeder
     if ! id -u vffeeder > /dev/null 2>&1; then
         useradd vffeeder -s /sbin/nologin -d /var/lib/vffeeder -m
