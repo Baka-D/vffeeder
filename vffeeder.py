@@ -130,13 +130,9 @@ class Register:
         os.system('/bin/systemctl enable vffeeder')
         confirmInput = input('Would you like to enable auto-update for vffeeder? You will need to manually update it if auto-update is disabled. [Y/n]')[:1]
         if confirmInput == 'y' or confirmInput == '' or confirmInput == 'Y':
-            updateCommand = '0 0 * * * /usr/local/bin/vffeeder update'
+            updateCommand = '0 0 * * * root /usr/local/bin/vffeeder update\n'
             try:
-                with open('/var/spool/cron/crontabs/vffeeder', 'w') as cronjob:
-                    cronjob.write(updateCommand)
-                    cronjob.close()
-            except FileNotFoundError:
-                with open('/var/spool/cron/vffeeder', 'w') as cronjob:
+                with open('/etc/rcon.d/vffeeder', 'w') as cronjob:
                     cronjob.write(updateCommand)
                     cronjob.close()
             except:
