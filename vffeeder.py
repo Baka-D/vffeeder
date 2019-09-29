@@ -14,6 +14,7 @@ import urllib.request
 import uuid
 import zlib
 import os
+import signal
 
 configLocation = '/etc/vffeeder.ini'
 if os.path.isfile(configLocation) == False:
@@ -159,7 +160,7 @@ class Update:
         with open(scriptLocation, 'w') as scriptFile:
             scriptFile.write(latestScript)
             scriptFile.close()
-        os.system('/bin/systemctl restart vffeeder')
+        os.kill(get_pid(), signal.SIGKILL)
         print('Update completed successfully!')
         exit()
 
@@ -180,11 +181,24 @@ def get_help():
 def send_report(data):
     data = base64.b64encode(zlib.compress(data))
     try:
-        urllib.request.urlopen(url = config.get('DEFAULT','reportURL'), data = urllib.parse.urlencode({'from': config.get('DEFAULT','uuid'), 'code': data}).encode('ascii'))
+        urllib.request.Request(url = config.get('DEFAULT','reportURL'), data = urllib.parse.urlencode({'from': config.get('DEFAULT','uuid'), 'code': data}).encode('ascii'))
     except:
         print('Failed to contact with feed server.')
 
+def create_pid():
+    processPid = str(os.getpid())
+    with open('/var/run/vffeeder.pid', 'w') as pid_file:
+        pid_file.write(processPid)
+        pid_file.close()
+
+def get_pid():
+    with open('/var/run/vffeeder.pid', 'r') as pid_file:
+        processPid = int(pid_file.read())
+        pid_file.close()
+    return processPid
+
 def get_report():
+    create_pid()
     config.read(configLocation)
     HOST = config.get('HOST_INFO','address')
     PORT = int(config.get('HOST_INFO','port'))
