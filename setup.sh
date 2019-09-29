@@ -19,6 +19,7 @@ detect_system(){
     if [[ -f /etc/os-release ]]; then
         if grep -Eiq 'debian' /etc/os-release; then
             packageManager='apt'
+            apt -y update
         elif grep -Eiq 'rhel' /etc/os-release; then
             packageManager='yum'
         else
@@ -58,10 +59,7 @@ check_python(){
 install_python3(){
     read -n 1 -p 'Python 3 installetion not found, need to install Python 3 now. Do you want to continue? [Y/n]' confirmInput
     if [[ $confirmInput == 'y' ]] || [[ $confirmInput == 'Y' ]] || [[ $confirmInput == '' ]]; then
-        if [[ $packageManager == 'apt' ]]; then
-            apt update && apt install python3 curl -y
-        else
-            yum -y install python3 curl
+            $packageManager -y install python3 curl
         fi
         if [ $? -eq 0 ]; then
             checkPython=1
@@ -85,18 +83,14 @@ install_feeder(){
         exit 1
     fi
     if ! [[ -f /bin/systemctl ]]; then
-        if [[ $packageManager == 'apt' ]]; then
-            apt update && apt install systemd -y
-        else
-            yum -y install systemd
-        fi
+        $packageManager -y install systemd
     fi
     if ! curl -s -o /etc/systemd/system/vffeeder.service https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.service; then
         echo 'Failed to download feeder service script'
         exit 1
     fi
     chmod +x /usr/local/bin/vffeeder
-    if ! id -u vffeeder 2>&1; then
+    if ! id -u vffeeder > /dev/null 2>&1; then
         useradd vffeeder -s /sbin/nologin -d /var/lib/vffeeder -m
     fi
     exit 0
