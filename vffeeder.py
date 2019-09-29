@@ -95,14 +95,13 @@ class Register:
             else:
                 return False
         elif self.attr == 'uuid':
-                if self.nodeUUID == '':
-                    data = uuid.uuid4().hex[16:]
-                    self.nodeUUID = data
+                if self.nodeUUID == '' or len(self.nodeUUID) == 16:
+                    if self.nodeUUID == '':
+                        data = uuid.uuid4().hex[16:]
+                        self.nodeUUID = data
                     return True
-                elif len(self.nodeUUID) != 16:
-                    return False
                 else:
-                    return True
+                    return False
 
     def connection_test(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
