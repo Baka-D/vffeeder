@@ -132,7 +132,7 @@ class Register:
         if confirmInput == 'y' or confirmInput == '' or confirmInput == 'Y':
             updateCommand = '0 0 * * * root /usr/local/bin/vffeeder update\n'
             try:
-                with open('/etc/rcon.d/vffeeder', 'w') as cronjob:
+                with open('/etc/cron.d/vffeeder', 'w') as cronjob:
                     cronjob.write(updateCommand)
                     cronjob.close()
             except:
