@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #This script is writen for Variflight's ADS-B Feed Program.
-#You need to have an existing antenna to paticipent in this program.
+#You need to have an existing dump1090 installation to paticipent in this project.
 #You could learn more at https://flightadsb.variflight.com/
 #
 #System requirements: Centos 7+, Debian 7+, Ubuntu 14+
@@ -46,8 +46,8 @@ check_python(){
     detect_system
     if [[ -f /usr/bin/python3 ]]; then
         install_feeder
-    elif which python3; then
-        ln -s $('which python3') /usr/bin/python3
+    elif command -v python3 2>&1; then
+        ln -s $('command -v python3') /usr/bin/python3
     elif [[ $checkPython -eq 0 ]]; then
         install_python3
     else
