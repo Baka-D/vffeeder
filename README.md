@@ -7,8 +7,7 @@
 # System Requirements
 CentOS: 7+\
 Debian: 8+\
-Ubuntu: 14+\
-Support for other system may be added later.
+Ubuntu: 14+
 
 ## Run following command to install Variflight's ADS-B Feeder.
 `curl -s https://raw.githubusercontent.com/Baka-D/vffeeder/master/setup.sh | bash && /usr/local/bin/vffeeder signup`\
