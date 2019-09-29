@@ -34,7 +34,7 @@ detect_system(){
     fi
     if [[ $packageManager == 'yum' ]]; then
         RHELVER=$(rpm --eval %rhel)
-        if [[ $RHELVER -ne 7 ]]; then
+        if [[ $RHELVER -ge 7 ]]; then
         	echo 'Unsupported RHEL version.'
          	exit 1
         fi
