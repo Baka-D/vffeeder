@@ -4,7 +4,7 @@
 #You need to have an existing antenna to paticipent in this program.
 #You could learn more at https://flightadsb.variflight.com/
 #
-#System requirements: Centos 7+, Debian 7+, Ubuntu 15+
+#System requirements: Centos 7+, Debian 7+, Ubuntu 14+
 
 [[ $EUID -ne 0 ]] && echo 'Please run this script as root!' && exit 1
 
@@ -43,7 +43,8 @@ detect_system(){
 checkPython=0
 
 check_python(){
-    if which python3; then
+    detect_system
+    if ! [[ -f /usr/bin/python3 ]]; then
         if which python3 != '/usr/bin/python3'; then
             ln -s $('which python3') /usr/bin/python3
         fi
@@ -56,13 +57,12 @@ check_python(){
 }
 
 install_python3(){
-    detect_system
     read -n 1 -p 'Python 3 installetion not found, need to install Python 3 now. Do you want to continue? [Y/n]' confirmInput
     if [[ $confirmInput == 'y' ]] || [[ $confirmInput == 'Y' ]] || [[ $confirmInput == '' ]]; then
         if [[ $packageManager == 'apt' ]]; then
-            apt update && apt install python3 curl systemd -y
+            apt update && apt install python3 curl -y
         else
-            yum -y install python3 curl systemd
+            yum -y install python3 curl
         fi
         if [ $? -eq 0 ]; then
             checkPython=1
@@ -84,6 +84,13 @@ install_feeder(){
     if ! curl -o /usr/local/bin/vffeeder https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.py; then
         echo 'Failed to download feeder script'
         exit 1
+    fi
+    if ! [[ -f /bin/systemctl ]]; then
+        if [[ $packageManager == 'apt' ]]; then
+            apt install systemd -y
+        else
+            yum -y install systemd
+        fi
     fi
     if ! curl -o /etc/systemd/system/vffeeder.service https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.service; then
         echo 'Failed to download feeder service script'
