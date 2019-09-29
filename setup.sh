@@ -85,15 +85,20 @@ compile_python3(){
 }
 
 install_feeder(){
-    curl -o /usr/local/bin/vffeeder https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.py
-    if [ $? -ne 0 ]; then
+    if ! curl -o /usr/local/bin/vffeeder https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.py; then
         echo 'Failed to download feeder script'
         exit 1
     fi
-    curl -o /etc/systemd/system/vffeeder.service https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.service
+    if ! curl -o /etc/systemd/system/vffeeder.service https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.service; then
+        echo 'Failed to download feeder service script'
+        exit 1
+    fi
     chmod +x /usr/local/bin/vffeeder
     useradd vffeeder -s /sbin/nologin -d /var/lib/vffeeder -m
-    python3 /usr/local/bin/vffeeder signup
+    if ! python3 /usr/local/bin/vffeeder signup; then
+        echo 'Failed to run feeder'
+        exit 1
+    fi
 }
 
 main(){
