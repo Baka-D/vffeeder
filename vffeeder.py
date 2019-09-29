@@ -121,7 +121,7 @@ class Register:
         config.add_section('HOST_INFO')
         config.set('DEFAULT','reportURL','http://adsb.feeyo.com/adsb/ReceiveCompressADSB.php')
         config.set('DEFAULT','uuid',self.nodeUUID)
-        config.set('DEFAULT','version','0.1.0')
+        config.set('DEFAULT','version','0.1.2')
         config.set('HOST_INFO','address',self.address)
         config.set('HOST_INFO','port',self.port)
         with open(configLocation, 'w') as configfile:
@@ -130,7 +130,7 @@ class Register:
         os.system('/bin/systemctl enable vffeeder')
         confirmInput = input('Would you like to enable auto-update for vffeeder? You will need to manually update it if auto-update is disabled. [Y/n]')[:1]
         if confirmInput == 'y' or confirmInput == '' or confirmInput == 'Y':
-            updateCommand = '0 0 * * * root /usr/local/bin/vffeeder update\n'
+            updateCommand = '0 0 * * * root /usr/local/bin/vffeeder update >> /var/log/vffeeder-update.log\n'
             try:
                 with open('/etc/cron.d/vffeeder', 'w') as cronjob:
                     cronjob.write(updateCommand)
