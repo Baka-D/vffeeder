@@ -4,7 +4,7 @@
 #You need to have an existing antenna to paticipent in this program.
 #You could learn more at https://flightadsb.variflight.com/
 #
-#System requirements: Centos 6+, Debian 7+, Ubuntu 14+
+#System requirements: Centos 7+, Debian 7+, Ubuntu 15+
 
 [[ $EUID -ne 0 ]] && echo 'Please run this script as root!' && exit 1
 
@@ -33,7 +33,7 @@ detect_system(){
     fi
     if [[ $packageManager == 'yum' ]]; then
         RHELVER=$(rpm --eval %rhel)
-        if [[ $RHELVER -ne 6 ]] && [[ $RHELVER -ne 7 ]]; then
+        if [[ $RHELVER -ne 7 ]]; then
         	echo 'Unsupported RHEL version.'
          	exit 1
         fi
@@ -60,13 +60,9 @@ install_python3(){
     read -n 1 -p 'Python 3 installetion not found, need to install Python 3 now. Do you want to continue? [Y/n]' confirmInput
     if [[ $confirmInput == 'y' ]] || [[ $confirmInput == 'Y' ]] || [[ $confirmInput == '' ]]; then
         if [[ $packageManager == 'apt' ]]; then
-            apt update && apt install python3 curl -y
+            apt update && apt install python3 curl systemd -y
         else
-            if [[ $RHELVER -eq 7 ]]; then
-                yum -y update && yum -y install python3 curl
-            else
-                yum -y update && yum -y install python34 curl
-            fi
+            yum -y update && yum -y install python3 curl systemd
         fi
         if [ $? -eq 0 ]; then
             checkPython=1
