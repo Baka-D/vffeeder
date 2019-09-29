@@ -131,9 +131,17 @@ class Register:
         confirmInput = input('Would you like to enable auto-update for vffeeder? You will need to manually update it if auto-update is disabled. [Y/n]')[:1]
         if confirmInput == 'y' or confirmInput == '' or confirmInput == 'Y':
             updateCommand = '0 0 * * * /usr/local/bin/vffeeder update'
-            with open('/var/spool/cron/crontabs/vffeeder', 'w') as cronjob:
-                cronjob.write(updateCommand)
-                cronjob.close()
+            try:
+                with open('/var/spool/cron/crontabs/vffeeder', 'w') as cronjob:
+                    cronjob.write(updateCommand)
+                    cronjob.close()
+            except FileNotFoundError:
+                with open('/var/spool/cron/vffeeder', 'w') as cronjob:
+                    cronjob.write(updateCommand)
+                    cronjob.close()
+            except:
+                print('Failed to add cronjob, please add the following line to your cronjob file manually.')
+                print(updateCommand)
         return
 
 class Update:
