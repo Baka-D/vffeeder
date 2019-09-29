@@ -128,6 +128,12 @@ class Register:
             config.write(configfile)
             configfile.close()
         os.system('/bin/systemctl enable vffeeder')
+        confirmInput = input('Would you like to enable auto-update for vffeeder? You will need to manually update it if auto-update is disabled. [Y/n]')[:1]
+        if confirmInput == 'y' or confirmInput == '' or confirmInput == 'Y':
+            updateCommand = '0 0 * * * /usr/local/bin/vffeeder update'
+            with open('/var/spool/cron/crontabs/vffeeder', 'w') as cronjob:
+                cronjob.write(updateCommand)
+                cronjob.close()
         return
 
 class Update:
@@ -136,8 +142,8 @@ class Update:
         currentVersion = self.parse_version(config.get('DEFAULT','version'))
         getVersion = urllib.request.urlopen(url = 'https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.ini')
         config.read_string(getVersion.read().decode())
-        latestVersion = self.parse_version(config.get('DEFAULT','version'))
-        if currentVersion < latestVersion:
+        self.latestVersion = config.get('DEFAULT','version')
+        if currentVersion < self.parse_version(self.latestVersion):
             self.upgrade()
         print('This is the latest version, no need to update.')
         exit()
