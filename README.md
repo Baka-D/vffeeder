@@ -11,6 +11,6 @@ Ubuntu: 14+\
 Support for other system may be added later.
 
 ## Run following command to install Variflight's ADS-B Feeder.
-`curl https://raw.githubusercontent.com/Baka-D/vffeeder/master/setup.sh | bash && /usr/local/bin/vffeeder signup`\
+`curl -s https://raw.githubusercontent.com/Baka-D/vffeeder/master/setup.sh | bash && /usr/local/bin/vffeeder signup`\
 or\
 `wget -q -O - https://raw.githubusercontent.com/Baka-D/vffeeder/master/setup.sh | bash && /usr/local/bin/vffeeder signup`
