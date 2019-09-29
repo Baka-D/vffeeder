@@ -2,7 +2,7 @@
 #
 #This script is writen for VariFlight's ADS-B Feed Program.
 #You need to have an existing dump1090 installation to paticipent in this project.
-#You could learn more at https://flightadsb.varilight.com/
+#You could learn more at https://flightadsb.variflight.com/
 #
 #System requirements: Centos 7+, Debian 8+, Ubuntu 14+
 
