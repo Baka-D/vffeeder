@@ -62,7 +62,7 @@ install_python3(){
         if [[ $packageManager == 'apt' ]]; then
             apt update && apt install python3 curl systemd -y
         else
-            yum -y update && yum -y install python3 curl systemd
+            yum -y install python3 curl systemd
         fi
         if [ $? -eq 0 ]; then
             checkPython=1
@@ -91,10 +91,6 @@ install_feeder(){
     fi
     chmod +x /usr/local/bin/vffeeder
     useradd vffeeder -s /sbin/nologin -d /var/lib/vffeeder -m
-    if ! python3 /usr/local/bin/vffeeder signup; then
-        echo 'Failed to run feeder'
-        exit 1
-    fi
 }
 
 main(){
