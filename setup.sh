@@ -44,11 +44,10 @@ checkPython=0
 
 check_python(){
     detect_system
-    if ! [[ -f /usr/bin/python3 ]]; then
-        if which python3 != '/usr/bin/python3'; then
-            ln -s $('which python3') /usr/bin/python3
-        fi
+    if [[ -f /usr/bin/python3 ]]; then
         install_feeder
+    elif which python3; then
+        ln -s $('which python3') /usr/bin/python3
     elif [[ $checkPython -eq 0 ]]; then
         install_python3
     else
@@ -64,8 +63,12 @@ install_python3(){
         else
             yum -y install python3 curl
         fi
-        checkPython=1
-        check_python
+        if [ $? -eq 0 ]; then
+            checkPython=1
+            check_python
+        else
+            compile_python3
+        fi
     else
         echo 'Process aborted.'
         exit 1
