@@ -133,14 +133,21 @@ class Register:
 class Update:
     def check(self):
         config.read(configLocation)
-        currentVersion = config.get('DEFAULT','version')
+        currentVersion = self.parse_version(config.get('DEFAULT','version'))
         getVersion = urllib.request.urlopen(url = 'https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.ini')
         config.read_string(getVersion.read().decode())
-        self.latestVersion = config.get('DEFAULT','version')
-        if currentVersion != self.latestVersion:
+        latestVersion = self.parse_version(config.get('DEFAULT','version'))
+        if currentVersion < latestVersion:
             self.upgrade()
         print('This is the latest version, no need to update.')
         exit()
+
+    def parse_version(self, data):
+        versionNumber = data.split('.')
+        version = ()
+        for int(versionNumber) in versionNumber:
+            version = version + (versionNumber,)
+        return version
 
     def upgrade(self):
         scriptLocation = os.path.abspath(__file__)
@@ -157,6 +164,13 @@ class Update:
         os.system('/bin/systemctl restart vffeeder')
         print('Update completed successfully!')
         exit()
+
+def help():
+    print('Usage:')
+    print('    vffeeder - Start feeding to VariFlight\'s server')
+    print('    vffeeder update - Check and update to the latest version of vffeeder')
+    print('    vffeeder signup - Configure and setup vffeeder')
+    exit()
 
 def send_report(data):
     data = base64.b64encode(zlib.compress(data))
@@ -187,5 +201,7 @@ elif sys.argv[1] == 'signup':
     Register().check()
 elif sys.argv[1] == 'update':
     Update().check()
+elif sys.argv[1] == 'help':
+    help()
 else:
     print('Unknown argument. use \'vffeeder help\' to get command list.')
