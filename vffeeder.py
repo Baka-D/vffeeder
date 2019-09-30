@@ -15,9 +15,14 @@ import uuid
 import zlib
 import os
 import signal
+import logging
 
 cronfileLocation = '/etc/cron.d/vffeeder'
 configLocation = '/etc/vffeeder.ini'
+pidLocation = '/var/lib/vffeeder/vffeeder.pid'
+logLocation = '/var/lib/vffeeder/vffeeder.log'
+
+logging.basicConfig(filename = logLocation, filemode='a', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level = logging.INFO)
 
 config = configparser.ConfigParser()
 
@@ -55,7 +60,6 @@ class Register:
                 self.nodeUUID = input('Please enter your UUID if this is an existing feeder, leave it blank if this is a new feeder.\nFeeder UUID:')
                 self.attr = 'uuid'
                 if self.validate() == True:
-                    print('Your UUID is', self.nodeUUID+', please register it on http://flightadsb.variflight.com/share-data/script if you haven\'t yet.')
                     break
                 else:
                     print('Invalid UUID, please check again and re-enter.')
@@ -94,6 +98,7 @@ class Register:
                 if self.nodeUUID == '' or len(self.nodeUUID) == 16:
                     if self.nodeUUID == '':
                         data = uuid.uuid4().hex[16:]
+                        print('Your new UUID is', data+'. Please register this UUID on http://flightadsb.variflight.com/share-data/script to improve the accuracy of the data you feed to us.')
                         self.nodeUUID = data
                     return True
                 else:
@@ -103,7 +108,8 @@ class Register:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
                 s.connect((self.address, int(self.port)))
-            except Exception:
+            except Exception as e:
+                logging.error('Failed to contact with dump1090 with provided data during signup.', exc_info = True)
                 return False
             s.close()
             return True
@@ -127,13 +133,17 @@ class Register:
                     cronjob.close()
                 os.chmod(cronfileLocation, 0o644)
             except:
+                logging.error('Failed to add cronjob.', exc_info=True)
                 print('Failed to add cronjob, please add the following line to your cronjob file manually.')
                 print(updateCommand)
 
 class Update:
     def check(self):
+        logging.info('Checking updates...')
         if parse_version(currentVersion) < parse_version(latestVersion):
+            logging.info('New version found! Updating...')
             self.upgrade()
+        logging.info('This is the latest version, no need to update.')
         print('This is the latest version, no need to update.')
         exit()
 
@@ -152,7 +162,6 @@ class Update:
         with open(configLocation, 'w') as configFile:
             config.write(configLocation)
             config.close()
-        os.kill(get_pid(), signal.SIGKILL)
         exit()
 
     def finalize(self):
@@ -162,7 +171,8 @@ class Update:
         with open(configLocation, 'w') as configfile:
             config.write(configfile)
             configfile.close()
-            print('Update completed successfully!')
+        logging.info('Update completed successfully!')
+        print('Update completed successfully!')
 
 def parse_version(data):
     versionFull = data.split('.')
@@ -181,18 +191,19 @@ def get_help():
 def send_report(data):
     data = base64.b64encode(zlib.compress(data))
     try:
-        urllib.request.Request(url = config.get('DEFAULT','reportURL'), data = urllib.parse.urlencode({'from': config.get('DEFAULT','uuid'), 'code': data}).encode('ascii'))
-    except:
+        urllib.request.urlopen(url = config.get('DEFAULT','reportURL'), data = urllib.parse.urlencode({'from': config.get('DEFAULT','uuid'), 'code': data}).encode('ascii'))
+    except Exception as e:
+        logging.critical('Failed to contact with VariFlight feed server.', exc_info = True)
         print('Failed to contact with feed server.')
 
 def create_pid():
     processPid = str(os.getpid())
-    with open('/var/run/vffeeder.pid', 'w') as pid_file:
+    with open(pidLocation, 'w') as pid_file:
         pid_file.write(processPid)
         pid_file.close()
 
 def get_pid():
-    with open('/var/run/vffeeder.pid', 'r') as pid_file:
+    with open(pidLocation, 'r') as pid_file:
         processPid = int(pid_file.read())
         pid_file.close()
     return processPid
@@ -208,12 +219,12 @@ def get_report():
             try:
                 s = socket.create_connection((HOST, PORT))
                 break
-            except:
+            except Exception as e:
+                logging.critical('Failed to reach dump1090, please check your Internet connection.', exc_info = True)
                 print('Failed to reach dump1090, please check your Internet connection, will try again in 10s.')
                 sleep(10)
         data = s.recv(1024)
         send_report(data)
-
 
 try:
     getIni = urllib.request.urlopen(url = 'https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.ini').read().decode()
@@ -227,9 +238,10 @@ try:
     if parse_version(currentVersion) == parse_version(latestVersion):
         if config.get('DEFAULT','updateFinalized') == 'False':
             Update().finalize()
-except:
+        logging.info('vffeeder started successfully!')
+except Exception as e:
+    logging.error('Failed to fetch latest configuration file.', exc_info = True)
     print('Failed to fetch latest configuration file.')
-    exit()
 
 if len(sys.argv) == 1:
     get_report()
