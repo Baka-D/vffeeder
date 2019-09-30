@@ -16,12 +16,8 @@ import zlib
 import os
 import signal
 
+cronfileLocation = '/etc/cron.d/vffeeder'
 configLocation = '/etc/vffeeder.ini'
-if os.path.isfile(configLocation) == False:
-    getIni = urllib.request.urlopen(url = 'https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.ini')
-    with open(configLocation, 'w') as config_file:
-        config_file.write(getIni.read().decode())
-        config_file.close()
 
 config = configparser.ConfigParser()
 
@@ -32,12 +28,12 @@ class Register:
             nodeUUID = config.get('DEFAULT','uuid')
         except:
             self.signup()
-        confirmInput = input('It seems that you already have a configration file for VariFlight feeder, would you like to override that file? (Y/n)')[:1]
-        if confirmInput == 'y' or confirmInput == '' or confirmInput == 'Y':
-            self.signup()
-        else:
+        confirmInput = input('It seems that you already have a configration file for VariFlight feeder, would you like to override that file? (y/N)')[:1]
+        if confirmInput == 'n' or confirmInput == '' or confirmInput == 'N':
             os.system('/bin/systemctl enable vffeeder')
             print('Your UUID for current configuration is', nodeUUID+'. You could run \'systemctl start vffeeder\' to start feed data now!')
+        else:
+            self.signup()
 
     def signup(self):
         while True:
@@ -126,42 +122,47 @@ class Register:
         if confirmInput == 'y' or confirmInput == '' or confirmInput == 'Y':
             updateCommand = '0 0 * * * root /usr/local/bin/vffeeder update >> /var/log/vffeeder-update.log\n'
             try:
-                with open('/etc/cron.d/vffeeder', 'w') as cronjob:
+                with open(cronfileLocation, 'w') as cronjob:
                     cronjob.write(updateCommand)
                     cronjob.close()
-                os.chmod('/etc/cron.d/vffeeder', 0o644)
+                os.chmod(cronfileLocation, 0o644)
             except:
                 print('Failed to add cronjob, please add the following line to your cronjob file manually.')
                 print(updateCommand)
-        return
 
 class Update:
     def check(self):
-        config.read(configLocation)
-        currentVersion = parse_version(config.get('DEFAULT','version'))
-        getVersion = urllib.request.urlopen(url = 'https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.ini')
-        config.read_string(getVersion.read().decode())
-        self.latestVersion = config.get('DEFAULT','version')
-        if currentVersion < parse_version(self.latestVersion):
+        if parse_version(currentVersion) < parse_version(latestVersion):
             self.upgrade()
         print('This is the latest version, no need to update.')
         exit()
 
     def upgrade(self):
         scriptLocation = os.path.abspath(__file__)
-        getLatest = urllib.request.urlopen(url = 'https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.py')
-        latestScript = getLatest.read().decode()
-        config.read(configLocation)
-        config.set('DEFAULT','version',self.latestVersion)
-        with open(configLocation, 'w') as configfile:
-            config.write(configfile)
-            configfile.close()
+        latestScript = getIni
+        self.setFinalizeState()
         with open(scriptLocation, 'w') as scriptFile:
             scriptFile.write(latestScript)
             scriptFile.close()
         os.kill(get_pid(), signal.SIGKILL)
-        print('Update completed successfully!')
         exit()
+
+    def setFinalizeState(self):
+        config.set('DEFAULT','updateFinalized','False')
+        with open(configLocation, 'w') as configFile:
+            config.write(configLocation)
+            config.close()
+        os.kill(get_pid(), signal.SIGKILL)
+        exit()
+
+    def finalize(self):
+        config.read(configLocation)
+        config.set('DEFAULT','version',latestVersion)
+        config.set('DEFAULT','updateFinalized','True')
+        with open(configLocation, 'w') as configfile:
+            config.write(configfile)
+            configfile.close()
+            print('Update completed successfully!')
 
 def parse_version(data):
     versionFull = data.split('.')
@@ -212,6 +213,23 @@ def get_report():
                 sleep(10)
         data = s.recv(1024)
         send_report(data)
+
+
+try:
+    getIni = urllib.request.urlopen(url = 'https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.ini').read().decode()
+    latestVersion = getIni.split('\n')[1].split(' ')[2]
+    if os.path.isfile(configLocation) == False:
+        with open(configLocation, 'w') as config_file:
+            config_file.write(getIni)
+            config_file.close()
+    config.read(configLocation)
+    currentVersion = config.get('DEFAULT','version')
+    if parse_version(currentVersion) == parse_version(latestVersion):
+        if config.get('DEFAULT','updateFinalized') == 'False':
+            Update().finalize()
+except:
+    print('Failed to fetch latest configuration file.')
+    exit()
 
 if len(sys.argv) == 1:
     get_report()
