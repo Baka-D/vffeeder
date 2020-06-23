@@ -48,7 +48,7 @@ pre_install(){
         write_config
         install_service
         echo 'Vffeeder has been installed successfully!'
-        echo 'Your UUID is' $instanceUuid ' Please register it at https://flightadsb.variflight.com/share-data/script'
+        echo 'Your UUID is' "$instanceUuid" ' Please register it at https://flightadsb.variflight.com/share-data/script'
     else
         echo 'Process aborted.'
         exit 1
@@ -72,11 +72,11 @@ install_feeder(){
 
 write_config(){
     echo '[DEFAULT]' > /etc/vffeeder.ini
-    echo 'uuid =' $instanceUuid >> /etc/vffeeder.ini
+    echo 'uuid =' "$instanceUuid" >> /etc/vffeeder.ini
     echo 'reporturl = http://adsb.feeyo.com/adsb/ReceiveCompressADSB.php' >> /etc/vffeeder.ini
     echo '' >> /etc/vffeeder.ini
     echo '[HOST_INFO]' >> /etc/vffeeder.ini
-    echo 'address =' $instanceAddress >> /etc/vffeeder.ini
+    echo 'address =' "$instanceAddress" >> /etc/vffeeder.ini
     echo 'port = 30003' >> /etc/vffeeder.ini
 }
 
