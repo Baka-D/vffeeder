@@ -17,91 +17,81 @@ disable_selinux(){
 
 detect_system(){
     if [[ -f /etc/os-release ]]; then
-        if grep -Eiq 'debian' /etc/os-release; then
+        source /etc/os-release
+        if [[ $ID_LIKE == "debian" ]] || [[ $ID == "debian" ]]; then
             packageManager='apt'
-            apt -y update
-        elif grep -Eiq 'rhel' /etc/os-release; then
+        elif [[ $ID_LIKE == "rhel fedora" ]]; then
             packageManager='yum'
         else
             echo 'Unsupported system.'
             exit 1
         fi
-    elif grep -Eiq 'red hat' /proc/version; then
-        packageManager='yum'
-    else
-        echo 'Unsupported system.'
-        exit 1
-    fi
-    if [[ $packageManager == 'yum' ]]; then
-        RHELVER=$(rpm --eval %rhel)
-        if [[ $RHELVER -ge 7 ]]; then
-        	echo 'Unsupported RHEL version.'
-         	exit 1
-        fi
     fi
 }
 
-checkPython=0
-
-check_python(){
+pre_install(){
     detect_system
-    if [[ -f /usr/bin/python3 ]]; then
-        install_feeder
-    elif command -v python3 2>&1; then
-        ln -s $('command -v python3') /usr/bin/python3
-    elif [[ $checkPython -eq 0 ]]; then
-        install_python3
-    else
-        compile_python3
-    fi
-}
-
-install_python3(){
-    read -n 1 -p 'Python 3 installetion not found, need to install Python 3 now. Do you want to continue? [Y/n]' confirmInput
+    echo -n 'Please enter the IP address for your existing dump1090 instance. '
+    read -p 'IP address: ' instanceAddress
+    echo -n 'Please enter your feeder UUID if you already have one, otherwise leave it blank. '
+    read -p 'UUID: ' instanceUuid
+    read -n 1 -p 'Do you want to continue? [Y/n]' confirmInput
     if [[ $confirmInput == 'y' ]] || [[ $confirmInput == 'Y' ]] || [[ $confirmInput == '' ]]; then
-        $packageManager -y install python3 curl
-        if [ $? -eq 0 ]; then
-            checkPython=1
-            check_python
-        else
-            compile_python3
+        if [[ $packageManager == 'apt' ]]; then
+            apt update -y
         fi
+        $packageManager -y install python3 curl systemd
+        install_feeder
+        if [[ $instanceUuid == '' ]]; then
+            generate_uuid
+        fi
+        write_config
+        install_service
+        echo 'Vffeeder has been installed successfully!'
+        echo 'Your UUID is' $instanceUuid ' Please register it at https://flightadsb.variflight.com/share-data/script'
     else
         echo 'Process aborted.'
         exit 1
     fi
 }
 
-compile_python3(){
-    echo 'Failed to install Python 3 from your package manager, would you like to compile it from the source code? (This process may take a long time) [Y/n]' //TODO
+generate_uuid(){
+    beforeParse=$(cat /proc/sys/kernel/random/uuid)
+    parsedUuid=${beforeParse//-/}
+    instanceUuid=${parsedUuid:0:16}
 }
 
 install_feeder(){
-    if ! curl -s -o /usr/local/bin/vffeeder https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.py; then
-        echo 'Failed to download feeder script'
-        exit 1
-    fi
-    if ! [[ -f /bin/systemctl ]]; then
-        $packageManager -y install systemd
-    fi
-    if ! curl -s -o /etc/systemd/system/vffeeder.service https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.service; then
-        echo 'Failed to download feeder service script'
-        exit 1
-    fi
-    if ! curl -s -o /etc/vffeeder.ini https://raw.githubusercontent.com/Baka-D/vffeeder/master/vffeeder.ini; then
-        echo 'Failed to download feeder configuration template'
-        exit 1
+    if [[ -f vffeeder.py ]]; then
+        cp vffeeder.py /usr/local/bin/vffeeder
+    else
+        curl -s -o /usr/local/bin/vffeeder https://raw.githubusercontent.con/Baka-D/vffeeder/master/vffeeder.py
     fi
     chmod +x /usr/local/bin/vffeeder
-    if ! id -u vffeeder > /dev/null 2>&1; then
-        useradd vffeeder -s /sbin/nologin -d /var/lib/vffeeder -m
+}
+
+write_config(){
+    echo '[DEFAULT]' > /etc/vffeeder.ini
+    echo 'uuid =' $instanceUuid >> /etc/vffeeder.ini
+    echo 'reporturl = http://adsb.feeyo.com/adsb/ReceiveCompressADSB.php' >> /etc/vffeeder.ini
+    echo '' >> /etc/vffeeder.ini
+    echo '[HOST_INFO]' >> /etc/vffeeder.ini
+    echo 'address =' $instanceAddress >> /etc/vffeeder.ini
+    echo 'port = 30003' >> /etc/vffeeder.ini
+}
+
+install_service(){
+    useradd vffeeder -M -s /usr/sbin/nologin
+    touch /var/log/vffeeder.log
+    chown vffeeder /var/log/vffeeder.log
+    if [[ -f vffeeder.service ]]; then
+        cp vffeeder.service /etc/systemd/system/vffeeder.service
+    else
+        curl -s -o /etc/systemd/system/vffeeder.service https://raw.githubusercontent.con/Baka-D/vffeeder/master/vffeeder.service
     fi
-    exit 0
+    chmod +x /etc/systemd/system/vffeeder.service
+    /bin/systemctl enable vffeeder
+    /bin/systemctl start vffeeder
 }
 
-main(){
-    disable_selinux
-    check_python
-}
-
-main
+pre_install
